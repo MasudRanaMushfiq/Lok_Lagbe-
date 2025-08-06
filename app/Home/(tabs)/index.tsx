@@ -9,7 +9,19 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
+
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc,
+} from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { db } from '../../../firebaseConfig';
 
 const categories = [
   { name: 'Cleaning', icon: 'broom' },
@@ -51,6 +63,27 @@ export default function HomeScreen() {
     }
   };
 
+  const handleNotificationPress = async () => {
+    try {
+      const user = getAuth().currentUser;
+
+      if (!user) {
+        Alert.alert('Not logged in', 'Please log in to view notifications.');
+        return;
+      }
+
+      const notificationsRef = collection(db, 'notifications');
+      const q = query(notificationsRef, where('toUserId', '==', user.uid), where('read', '==', false));
+      const querySnapshot = await getDocs(q);
+
+      // Now navigate to notifications page
+      router.push('/notification');
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+      Alert.alert('Error', 'Failed to load notifications.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -59,7 +92,11 @@ export default function HomeScreen() {
             <Text style={styles.heading}>Lok Lagbe?</Text>
             <Text style={styles.tagline}>Find trusted professionals for any service</Text>
           </View>
-          <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.notificationBtn}
+            activeOpacity={0.7}
+            onPress={handleNotificationPress}
+          >
             <MaterialCommunityIcons name="bell-outline" size={28} color="#ff6347" />
           </TouchableOpacity>
         </View>
@@ -90,7 +127,11 @@ export default function HomeScreen() {
         />
 
         <View style={styles.postBtnWrap}>
-          <TouchableOpacity style={styles.postBtn} activeOpacity={0.9}>
+          <TouchableOpacity
+            style={styles.postBtn}
+            activeOpacity={0.9}
+            onPress={() => router.push('/post-your-work')}
+          >
             <Text style={styles.postBtnText}>Post your work</Text>
           </TouchableOpacity>
         </View>
@@ -181,12 +222,12 @@ const styles = StyleSheet.create({
   },
   postBtnWrap: {
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 12,
   },
   postBtn: {
     backgroundColor: '#ff6347',
-    paddingVertical: 16,
+    paddingVertical: 10,
     paddingHorizontal: 48,
     borderRadius: 30,
     alignItems: 'center',
