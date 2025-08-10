@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-nativ
 import { Link, router } from 'expo-router';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
 
 export default function SignUpScreen() {
   const [fullName, setFullName] = useState('');
@@ -55,7 +55,7 @@ export default function SignUpScreen() {
       setSuccessMsg(`✅ Account created successfully for ${user.email}`);
 
       setTimeout(() => {
-        router.replace('/login');
+        router.replace('/auth/login');
       }, 1500);
     } catch (error) {
       let message = 'An unknown error occurred.';
@@ -131,7 +131,7 @@ export default function SignUpScreen() {
 
       <Text style={styles.linkText}>
         Already have an account?{' '}
-        <Link href="/login" style={styles.link}>
+        <Link href="/auth/login" style={styles.link}>
           Sign In
         </Link>
       </Text>

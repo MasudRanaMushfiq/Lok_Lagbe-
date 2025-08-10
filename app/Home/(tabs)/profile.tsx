@@ -1,32 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ActivityIndicator,
-  ScrollView,
-  Alert,
-  TextInput,
-  Image
-} from 'react-native';
-import { getAuth, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../../../firebaseConfig';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
+import { getAuth, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { db } from '../../../firebaseConfig';
 
 const ProfileScreen = () => {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
   const [image, setImage] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    nid: ''
-  });
 
   const auth = getAuth();
   const currentUser = auth.currentUser;
@@ -35,7 +27,7 @@ const ProfileScreen = () => {
     const fetchUserData = async () => {
       try {
         if (!currentUser?.uid) {
-          router.replace('/login');
+          router.replace('/auth/login');
           return;
         }
 
@@ -43,11 +35,6 @@ const ProfileScreen = () => {
         if (userDoc.exists()) {
           const data = userDoc.data();
           setUserData(data);
-          setFormData({
-            fullName: data.fullName || '',
-            phone: data.phone || '',
-            nid: data.nid || ''
-          });
           if (data.profileImage) {
             setImage(data.profileImage);
           }
@@ -63,55 +50,19 @@ const ProfileScreen = () => {
     fetchUserData();
   }, [currentUser]);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-      await updateDoc(doc(db, 'users', currentUser?.uid || ''), {
-        profileImage: result.assets[0].uri
-      });
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.replace('/login');
+      router.replace('/auth/login');
     } catch (error) {
       console.error('Logout error:', error);
       Alert.alert('Error', 'Failed to logout');
     }
   };
 
-  const handleEdit = () => setEditing(true);
-  
-  const handleSave = async () => {
-    try {
-      if (!currentUser?.uid) return;
-      
-      await updateDoc(doc(db, 'users', currentUser.uid), {
-        fullName: formData.fullName,
-        phone: formData.phone,
-        nid: formData.nid
-      });
-
-      setUserData({ ...userData, ...formData });
-      setEditing(false);
-      Alert.alert('Success', 'Profile updated successfully');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile');
-    }
-  };
-
-  const handleChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  // Navigate to edit profile page instead of editing inline
+  const handleEdit = () => {
+    router.push('/profile/editprofile');
   };
 
   if (loading) {
@@ -127,34 +78,19 @@ const ProfileScreen = () => {
       {/* Profile Header */}
       <View style={styles.header}>
         <Text style={styles.title}>My Profile</Text>
-        {editing ? (
-          <TouchableOpacity onPress={handleSave}>
-            <Ionicons name="checkmark" size={28} color="#3a125d" />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity onPress={handleEdit}>
-            <Ionicons name="pencil" size={24} color="#3a125d" />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+          <Text style={styles.editButtonText}>Edit Profile</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Profile Picture */}
-      <TouchableOpacity 
-        style={styles.profileImageContainer}
-        onPress={editing ? pickImage : undefined}
-        disabled={!editing}
-      >
+      <View style={styles.profileImageContainer}>
         {image ? (
           <Image source={{ uri: image }} style={styles.profileImage} />
         ) : (
           <Ionicons name="person-circle" size={100} color="#3a125d" />
         )}
-        {editing && (
-          <View style={styles.editImageOverlay}>
-            <Ionicons name="camera" size={24} color="white" />
-          </View>
-        )}
-      </TouchableOpacity>
+      </View>
 
       {/* User Info Card */}
       <View style={styles.card}>
@@ -165,46 +101,24 @@ const ProfileScreen = () => {
 
         <View style={styles.infoRow}>
           <Text style={styles.label}>Full Name:</Text>
-          {editing ? (
-            <TextInput
-              style={styles.input}
-              value={formData.fullName}
-              onChangeText={(text) => handleChange('fullName', text)}
-              placeholder="Enter full name"
-            />
-          ) : (
-            <Text style={styles.value}>{userData?.fullName || 'Not set'}</Text>
-          )}
+          <Text style={styles.value}>{userData?.fullName || 'Not set'}</Text>
         </View>
 
         <View style={styles.infoRow}>
           <Text style={styles.label}>Phone:</Text>
-          {editing ? (
-            <TextInput
-              style={styles.input}
-              value={formData.phone}
-              onChangeText={(text) => handleChange('phone', text)}
-              placeholder="Enter phone number"
-              keyboardType="phone-pad"
-            />
-          ) : (
-            <Text style={styles.value}>{userData?.phone || 'Not set'}</Text>
-          )}
+          <Text style={styles.value}>{userData?.phone || 'Not set'}</Text>
         </View>
 
         <View style={styles.infoRow}>
           <Text style={styles.label}>NID:</Text>
-          {editing ? (
-            <TextInput
-              style={styles.input}
-              value={formData.nid}
-              onChangeText={(text) => handleChange('nid', text)}
-              placeholder="Enter NID number"
-              keyboardType="numeric"
-            />
-          ) : (
-            <Text style={styles.value}>{userData?.nid || 'Not set'}</Text>
-          )}
+          <Text style={styles.value}>{userData?.nid || 'Not set'}</Text>
+        </View>
+
+        <View style={[styles.infoRow, styles.bioRow]}>
+          <Text style={styles.label}>Bio:</Text>
+          <Text style={[styles.value, styles.bioValue]}>
+            {userData?.bio?.trim() ? userData.bio : 'Not set'}
+          </Text>
         </View>
 
         <View style={styles.infoRow}>
@@ -219,7 +133,7 @@ const ProfileScreen = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={[styles.button, styles.historyButton]}
-          onPress={() => router.push('/history')}
+          onPress={() => router.push('/profile/history')}
         >
           <Ionicons name="time" size={20} color="#fff" />
           <Text style={styles.buttonText}>Work History</Text>
@@ -253,11 +167,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    marginTop: 40,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#3a125d',
+  },
+  editButton: {
+    backgroundColor: '#007bff',
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
   profileImageContainer: {
     alignSelf: 'center',
@@ -268,17 +196,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-  },
-  editImageOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#3a125d',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   card: {
     backgroundColor: '#fff',
@@ -297,6 +214,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
+  bioRow: {
+    alignItems: 'flex-start',
+  },
   label: {
     fontSize: 16,
     fontWeight: '600',
@@ -308,14 +228,8 @@ const styles = StyleSheet.create({
     maxWidth: '60%',
     textAlign: 'right',
   },
-  input: {
-    fontSize: 16,
-    color: '#544d4d',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    paddingVertical: 5,
-    width: '60%',
-    textAlign: 'right',
+  bioValue: {
+    maxWidth: '65%',
   },
   buttonContainer: {
     marginTop: 10,

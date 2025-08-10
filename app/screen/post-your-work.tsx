@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,11 @@ import {
   StyleSheet,
   Alert,
   Platform,
+  ScrollView,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { collection, doc, setDoc, Timestamp, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db, auth } from '../firebaseConfig';
+import { db, auth } from '../../firebaseConfig';
 import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -36,16 +37,18 @@ export default function PostWorkScreen() {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
-  // Check auth state when component mounts
-  React.useEffect(() => {
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user);
       } else {
-        router.replace('/Home/(tabs)'); // Redirect to auth if not logged in
+        router.replace('/home/(tabs)');
       }
     });
     return unsubscribe;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePostWork = async () => {
@@ -54,26 +57,24 @@ export default function PostWorkScreen() {
       return;
     }
 
-    if (!jobTitle || !description || !price || !location) {
-      Alert.alert('Error', 'All fields are required.');
+    if (!jobTitle.trim() || !description.trim() || !price.trim() || !location.trim()) {
+      Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
 
+    setUploading(true);
     try {
-      // Normalize dates to start of day
       const normalizedStartDate = new Date(startDate);
       normalizedStartDate.setHours(0, 0, 0, 0);
-      
+
       const normalizedEndDate = new Date(endDate);
       normalizedEndDate.setHours(0, 0, 0, 0);
 
-      // Create document reference
       const workRef = doc(collection(db, 'worked'));
 
-      // Work data to be saved
       const workData = {
         workId: workRef.id,
-        userId: currentUser.uid, // Add user ID who posted the work
+        userId: currentUser.uid,
         jobTitle: jobTitle.trim(),
         description: description.trim(),
         price: Number(price),
@@ -83,12 +84,11 @@ export default function PostWorkScreen() {
         endDate: Timestamp.fromDate(normalizedEndDate),
         createdAt: Timestamp.now(),
         status: 'active',
+        images: [], // empty array since image upload is removed
       };
 
-      // Save to worked collection
       await setDoc(workRef, workData);
 
-      // Add to user's subcollection
       const userWorkRef = doc(db, 'users', currentUser.uid, 'postedWorks', workRef.id);
       await setDoc(userWorkRef, {
         workId: workRef.id,
@@ -96,22 +96,23 @@ export default function PostWorkScreen() {
         status: 'active',
       });
 
-      // Also update user's document with this work reference
       const userRef = doc(db, 'users', currentUser.uid);
       await updateDoc(userRef, {
         postedWorks: arrayUnion(workRef.id),
       });
 
       Alert.alert('Success', 'Work posted successfully!');
-      router.replace('/Home/(tabs)'); // Navigate to home page
+      router.replace('/home/(tabs)');
     } catch (err) {
       console.error('Error posting work:', err);
-      Alert.alert('Error', 'Something went wrong.');
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setUploading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.heading}>Post Your Work</Text>
 
       <TextInput
@@ -150,8 +151,8 @@ export default function PostWorkScreen() {
       />
 
       {/* Start Date Picker */}
-      <TouchableOpacity 
-        style={styles.input} 
+      <TouchableOpacity
+        style={styles.input}
         onPress={() => setShowStartDatePicker(true)}
       >
         <Text style={styles.dateText}>Start Date: {startDate.toDateString()}</Text>
@@ -171,8 +172,8 @@ export default function PostWorkScreen() {
       )}
 
       {/* End Date Picker */}
-      <TouchableOpacity 
-        style={styles.input} 
+      <TouchableOpacity
+        style={styles.input}
         onPress={() => setShowEndDatePicker(true)}
       >
         <Text style={styles.dateText}>End Date: {endDate.toDateString()}</Text>
@@ -205,26 +206,30 @@ export default function PostWorkScreen() {
         </Picker>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handlePostWork}>
-        <Text style={styles.buttonText}>Post Work</Text>
+      <TouchableOpacity
+        style={[styles.button, uploading && { backgroundColor: '#999' }]}
+        onPress={handlePostWork}
+        disabled={uploading}
+      >
+        <Text style={styles.buttonText}>
+          {uploading ? 'Posting...' : 'Post Work'}
+        </Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 24,
+    paddingVertical: 20,
     backgroundColor: '#eceefc',
   },
   heading: {
     fontSize: 22,
     fontWeight: '600',
     color: '#3a125d',
-    marginVertical: 20,
+    marginVertical: 10,
     marginLeft: 10,
-    marginTop: 50,
   },
   input: {
     height: 48,
@@ -242,12 +247,13 @@ const styles = StyleSheet.create({
     color: '#544d4d',
   },
   button: {
-    marginTop: 20,
+    marginTop: 10,
     backgroundColor: '#3a125d',
     paddingVertical: 14,
     marginHorizontal: 10,
     borderRadius: 10,
     alignItems: 'center',
+    marginBottom: 20,
   },
   buttonText: {
     color: '#fff',

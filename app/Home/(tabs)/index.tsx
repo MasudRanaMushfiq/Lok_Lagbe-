@@ -1,7 +1,8 @@
+
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
 import {
+  Alert,
   Dimensions,
   FlatList,
   SafeAreaView,
@@ -9,19 +10,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Alert,
 } from 'react-native';
 
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  doc,
-} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { db } from '../../../firebaseConfig';
 
 const categories = [
   { name: 'Cleaning', icon: 'broom' },
@@ -55,12 +46,9 @@ const cardWidth = (width - 2 * 16 - (numColumns * 2 * horizontalMargin)) / numCo
 export default function HomeScreen() {
   const router = useRouter();
 
-  const handleCategoryPress = (category) => {
-    if (category.name === 'Cleaning') {
-      router.push('/Home/clean');
-    } else {
-      console.log('Pressed:', category.name);
-    }
+  const handleCategoryPress = (category: { name: string; icon: string }) => {
+    const categoryName = category.name.toLowerCase().replace(/\s+/g, '-');
+    router.push({ pathname: '/category/[category]', params: { category: categoryName } });
   };
 
   const handleNotificationPress = async () => {
@@ -72,14 +60,9 @@ export default function HomeScreen() {
         return;
       }
 
-      const notificationsRef = collection(db, 'notifications');
-      const q = query(notificationsRef, where('toUserId', '==', user.uid), where('read', '==', false));
-      const querySnapshot = await getDocs(q);
-
-      // Now navigate to notifications page
-      router.push('/notification');
+      router.push('/notification/notification');
     } catch (error) {
-      console.error('Error marking notifications as read:', error);
+      console.error('Error loading notifications:', error);
       Alert.alert('Error', 'Failed to load notifications.');
     }
   };
@@ -115,7 +98,7 @@ export default function HomeScreen() {
               onPress={() => handleCategoryPress(item)}
             >
               <MaterialCommunityIcons
-                name={item.icon}
+                name={item.icon as React.ComponentProps<typeof MaterialCommunityIcons>['name']}
                 size={26}
                 color="#ff6347"
                 style={{ marginBottom: 6 }}
@@ -130,7 +113,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.postBtn}
             activeOpacity={0.9}
-            onPress={() => router.push('/post-your-work')}
+            onPress={() => router.push('/screen/post-your-work')}
           >
             <Text style={styles.postBtnText}>Post your work</Text>
           </TouchableOpacity>
@@ -148,7 +131,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f6f7fb',
-    paddingTop: 38,
+    paddingTop: 50,
     paddingHorizontal: 16,
   },
   headingRow: {

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
   ScrollView,
   Alert,
@@ -34,7 +33,7 @@ const WorkHistoryScreen = () => {
       try {
         const uid = auth.currentUser?.uid;
         if (!uid) {
-          router.replace('/login');
+          router.replace('/auth/login');
           return;
         }
 
@@ -69,6 +68,7 @@ const WorkHistoryScreen = () => {
     };
 
     fetchWorks();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchWorkDocuments = async (ids: string[]) => {
@@ -136,6 +136,7 @@ const WorkHistoryScreen = () => {
   };
 
   const renderWorkCard = (work: any, isAccepted = false) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const notification = getNotificationStatus(work.id);
     
     return (
@@ -187,23 +188,20 @@ const WorkHistoryScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📝 Your Posted Works</Text>
+      <Text style={styles.title}>Your Posted Works</Text>
       {postedWorks.length === 0 ? (
         <Text style={styles.noWorksText}>No posted works found</Text>
       ) : (
         postedWorks.map(work => renderWorkCard(work))
       )}
 
-      <Text style={styles.title}>✅ Your Accepted Works</Text>
+      <Text style={styles.title}>Your Accepted Works</Text>
       {acceptedWorks.length === 0 ? (
         <Text style={styles.noWorksText}>No accepted works found</Text>
       ) : (
         acceptedWorks.map(work => renderWorkCard(work, true))
       )}
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.buttonText}>⬅️ Back to Profile</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 };

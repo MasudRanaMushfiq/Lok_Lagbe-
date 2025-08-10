@@ -7,10 +7,11 @@ export default function Index() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace("/login"); // Navigate to login after 2 sec
+      router.replace("/auth/login"); // Navigate to login after 2 sec
     }, 2000);
 
     return () => clearTimeout(timer); // Clean up if component unmounts
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

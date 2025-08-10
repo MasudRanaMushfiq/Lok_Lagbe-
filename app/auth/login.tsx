@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebaseConfig'; // adjust the path if needed
+import { auth } from '../../firebaseConfig'; // adjust the path if needed
 
 const LogIn: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -37,7 +37,7 @@ const LogIn: React.FC = () => {
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
       setErrorMsg('');
-      router.replace('/Home');
+      router.replace('/home');
     } catch (error: any) {
       console.error('Login error:', error.message);
       setErrorMsg('❌ Invalid credentials. Please try again.');
@@ -82,7 +82,7 @@ const LogIn: React.FC = () => {
             If you don&apos;t have an account, please
           </Text>
           <Link
-            href="/signup"
+            href="/auth/signup"
             style={{
               fontWeight: 'bold',
               color: '#146C94',
