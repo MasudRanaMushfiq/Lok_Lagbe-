@@ -6,22 +6,23 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { db } from '../../../firebaseConfig';
 
 const ProfileScreen = () => {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [image, setImage] = useState<string | null>(null);
 
   const auth = getAuth();
   const currentUser = auth.currentUser;
+
+  // Set your admin UID here
+  const ADMIN_UID = "rccEl7PQ48Y4lZtQpv4lj3lea8i2";
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -33,11 +34,7 @@ const ProfileScreen = () => {
 
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (userDoc.exists()) {
-          const data = userDoc.data();
-          setUserData(data);
-          if (data.profileImage) {
-            setImage(data.profileImage);
-          }
+          setUserData(userDoc.data());
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -60,15 +57,18 @@ const ProfileScreen = () => {
     }
   };
 
-  // Navigate to edit profile page instead of editing inline
   const handleEdit = () => {
     router.push('/profile/editprofile');
+  };
+
+  const handleAdmin = () => {
+    router.push('/admin/dashboard');
   };
 
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#3a125d" />
+        <ActivityIndicator size="large" color="#262626" />
       </View>
     );
   }
@@ -77,183 +77,243 @@ const ProfileScreen = () => {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Profile Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>My Profile</Text>
-        <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+        <TouchableOpacity style={styles.profileImageWrapper} activeOpacity={0.8}>
+          <Ionicons name="person-circle" size={130} color="#c7c7c7" />
+        </TouchableOpacity>
+
+        <Text style={styles.userName}>
+          {userData?.fullName || 'No Name'}
+        </Text>
+
+        {userData?.bio?.trim() ? (
+          <Text style={styles.userBio}>{userData.bio}</Text>
+        ) : null}
+
+        <TouchableOpacity style={styles.editButton} onPress={handleEdit} activeOpacity={0.7}>
           <Text style={styles.editButtonText}>Edit Profile</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Profile Picture */}
-      <View style={styles.profileImageContainer}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.profileImage} />
-        ) : (
-          <Ionicons name="person-circle" size={100} color="#3a125d" />
-        )}
+      {/* Info Section */}
+      <View style={styles.infoSection}>
+        <InfoCard label="Email" value={currentUser?.email || 'Not set'} />
+        <InfoCard label="Phone" value={userData?.phone || 'Not set'} />
+        <InfoCard label="NID" value={userData?.nid || 'Not set'} />
+        <InfoCard label="Member Since" value={userData?.createdAt?.toDate?.().toLocaleDateString() || 'Unknown'} />
+        <InfoCard
+          label="Rating"
+          value={
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={18} color="#f1c40f" />
+              <Text style={styles.ratingText}>{userData?.rating ?? 1}</Text>
+            </View>
+          }
+        />
+        <InfoCard
+          label="Verified"
+          value={
+            <View style={styles.verifiedContainer}>
+              {userData?.verified ? (
+                <>
+                  <Ionicons name="checkmark-circle" size={18} color="#3897f0" />
+                  <Text style={[styles.verifiedText, { color: '#3897f0' }]}>Verified</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="close-circle" size={18} color="#bbb" />
+                  <Text style={[styles.verifiedText, { color: '#bbb' }]}>Not Verified</Text>
+                </>
+              )}
+            </View>
+          }
+        />
       </View>
 
-      {/* User Info Card */}
-      <View style={styles.card}>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Email:</Text>
-          <Text style={styles.value}>{currentUser?.email}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Full Name:</Text>
-          <Text style={styles.value}>{userData?.fullName || 'Not set'}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Phone:</Text>
-          <Text style={styles.value}>{userData?.phone || 'Not set'}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>NID:</Text>
-          <Text style={styles.value}>{userData?.nid || 'Not set'}</Text>
-        </View>
-
-        <View style={[styles.infoRow, styles.bioRow]}>
-          <Text style={styles.label}>Bio:</Text>
-          <Text style={[styles.value, styles.bioValue]}>
-            {userData?.bio?.trim() ? userData.bio : 'Not set'}
-          </Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Member Since:</Text>
-          <Text style={styles.value}>
-            {userData?.createdAt?.toDate?.().toLocaleDateString() || 'Unknown'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={[styles.button, styles.historyButton]}
+      {/* Buttons Row */}
+      <View style={styles.buttonsRow}>
+        <OutlineButton
+          text="Work History"
           onPress={() => router.push('/profile/history')}
-        >
-          <Ionicons name="time" size={20} color="#fff" />
-          <Text style={styles.buttonText}>Work History</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.button, styles.logoutButton]}
+        />
+        <OutlineButton
+          text="Logout"
           onPress={handleLogout}
-        >
-          <Ionicons name="log-out" size={20} color="#fff" />
-          <Text style={styles.buttonText}>Logout</Text>
-        </TouchableOpacity>
+          textColor="#ed4956"
+          borderColor="#ed4956"
+        />
       </View>
+
+      {/* Admin Button */}
+      {currentUser?.uid === ADMIN_UID && (
+        <TouchableOpacity
+          style={styles.adminButton}
+          onPress={handleAdmin}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.adminButtonText}>Admin Panel</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
 
+const InfoCard = ({ label, value }: { label: string; value: any }) => (
+  <View style={styles.infoCard}>
+    <Text style={styles.infoLabel}>{label}</Text>
+    {typeof value === 'string' ? (
+      <Text style={styles.infoValue}>{value}</Text>
+    ) : (
+      value
+    )}
+  </View>
+);
+
+const OutlineButton = ({
+  text,
+  onPress,
+  textColor = '#262626',
+  borderColor = '#dbdbdb',
+}: {
+  text: string;
+  onPress: () => void;
+  textColor?: string;
+  borderColor?: string;
+}) => (
+  <TouchableOpacity
+    style={[styles.outlineButton, { borderColor }]}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <Text style={[styles.outlineButtonText, { color: textColor }]}>{text}</Text>
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
+    paddingTop: 36,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    alignItems: 'center',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 40,
+    marginBottom: 28,
+    marginTop: 20,
+    width: '100%',
   },
-  title: {
+  profileImageWrapper: {
+    borderRadius: 100,
+    borderWidth: 3,
+    borderColor: '#3897f0',
+    overflow: 'hidden',
+    marginBottom: 14,
+  },
+  userName: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#3a125d',
+    fontWeight: '700',
+    color: '#262626',
+    marginBottom: 6,
+  },
+  userBio: {
+    fontSize: 14,
+    color: '#8e8e8e',
+    marginBottom: 14,
+    textAlign: 'center',
+    paddingHorizontal: 12,
   },
   editButton: {
-    backgroundColor: '#007bff',
+    borderWidth: 1,
+    borderColor: '#dbdbdb',
+    paddingHorizontal: 40,
     paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 22,
   },
   editButtonText: {
-    color: '#fff',
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: 14,
+    color: '#262626',
   },
-  profileImageContainer: {
-    alignSelf: 'center',
-    marginBottom: 20,
-    position: 'relative',
+  infoSection: {
+    width: '100%',
+    marginBottom: 28,
   },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  infoRow: {
+  infoCard: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#efefef',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
   },
-  bioRow: {
-    alignItems: 'flex-start',
-  },
-  label: {
-    fontSize: 16,
+  infoLabel: {
     fontWeight: '600',
-    color: '#3a125d',
+    color: '#262626',
+    fontSize: 15,
   },
-  value: {
-    fontSize: 16,
-    color: '#544d4d',
-    maxWidth: '60%',
+  infoValue: {
+    color: '#999',
+    fontSize: 15,
+    maxWidth: '65%',
     textAlign: 'right',
   },
-  bioValue: {
-    maxWidth: '65%',
-  },
-  buttonContainer: {
-    marginTop: 10,
-    gap: 12,
-  },
-  button: {
+  ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 10,
-    elevation: 2,
-    gap: 8,
   },
-  historyButton: {
-    backgroundColor: '#19A7CE',
-  },
-  logoutButton: {
-    backgroundColor: '#e63946',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
+  ratingText: {
+    marginLeft: 6,
     fontWeight: '600',
+    fontSize: 15,
+    color: '#999',
+  },
+  verifiedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  verifiedText: {
+    marginLeft: 6,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  outlineButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 24,
+    paddingVertical: 10,
+    marginHorizontal: 6,
+    alignItems: 'center',
+  },
+  outlineButtonText: {
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  adminButton: {
+    width: '100%',
+    backgroundColor: '#3897f0',
+    paddingVertical: 12,
+    borderRadius: 24,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  adminButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });
 

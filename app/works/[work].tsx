@@ -13,7 +13,6 @@ import { doc, getDoc, updateDoc, addDoc, collection, Timestamp } from 'firebase/
 import { db } from '../../firebaseConfig';
 import { getAuth } from 'firebase/auth';
 
-
 export default function WorkDetails() {
   const { work: id } = useLocalSearchParams();
   const router = useRouter();
@@ -25,7 +24,6 @@ export default function WorkDetails() {
 
   const currentUser = getAuth().currentUser;
 
-  // Helper to format Firestore timestamps
   const formatDate = (ts: Timestamp | string | number | null | undefined) => {
     if (!ts) return 'N/A';
     if (ts instanceof Timestamp) {
@@ -55,7 +53,6 @@ export default function WorkDetails() {
         const work = workSnap.data();
         setWorkData(work);
 
-        // Fetch poster's name
         if (work.userId) {
           const userRef = doc(db, 'users', work.userId);
           const userSnap = await getDoc(userRef);
@@ -96,14 +93,12 @@ export default function WorkDetails() {
       const workRef = doc(db, 'worked', id as string);
       const userRef = doc(db, 'users', acceptingUserId);
 
-      // Update the work document
       await updateDoc(workRef, {
         acceptedBy: acceptingUserId,
         acceptedAt: Timestamp.now(),
         status: 'pending',
       });
 
-      // Update user's acceptedWorks list
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const userData = userSnap.data();
@@ -116,9 +111,9 @@ export default function WorkDetails() {
         }
       }
 
-      // Add notification to poster
+      // Add notification and then update it with its own document ID
       if (workData.userId) {
-        await addDoc(collection(db, 'notifications'), {
+        const notifRef = await addDoc(collection(db, 'notifications'), {
           toUserId: workData.userId,
           fromUserId: acceptingUserId,
           workId: id,
@@ -126,11 +121,15 @@ export default function WorkDetails() {
           createdAt: Timestamp.now(),
           read: false,
         });
+
+        // Update the notification doc with its own ID
+        await updateDoc(notifRef, { notificationId: notifRef.id });
+
+        console.log('Notification created with ID:', notifRef.id);
       }
 
       Alert.alert('Success', 'You have accepted this work!');
 
-      // Update local state
       setWorkData((prev: any) => ({
         ...prev,
         acceptedBy: acceptingUserId,
@@ -216,7 +215,6 @@ export default function WorkDetails() {
           </View>
         )}
 
-        {/* Go to Home Button */}
         <TouchableOpacity
           style={styles.homeButton}
           onPress={() => router.push('/home/(tabs)')}

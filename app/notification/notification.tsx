@@ -75,24 +75,24 @@ export default function NotificationsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#3a125d" />
+      <View style={[styles.centered, styles.background]}>
+        <ActivityIndicator size="large" color="#1877F2" />
       </View>
     );
   }
 
   if (!currentUser) {
     return (
-      <View style={styles.centered}>
-        <Text>Please log in to view notifications.</Text>
+      <View style={[styles.centered, styles.background]}>
+        <Text style={styles.infoText}>Please log in to view notifications.</Text>
       </View>
     );
   }
 
   if (notifications.length === 0) {
     return (
-      <View style={styles.centered}>
-        <Text>No notifications found.</Text>
+      <View style={[styles.centered, styles.background]}>
+        <Text style={styles.infoText}>No notifications found.</Text>
       </View>
     );
   }
@@ -102,16 +102,14 @@ export default function NotificationsScreen() {
 
     return (
       <TouchableOpacity
+        activeOpacity={0.7}
         style={[
           styles.notificationCard,
           item.read ? styles.read : styles.unread,
         ]}
         onPress={() => {
-          if (item.workId) {
-            router.push({ pathname: '/notification/[id]', params: { id: item.workId } });
-          } else {
-            Alert.alert('No Work ID', 'This notification is not linked to any work.');
-          }
+          // Push notification id here
+          router.push({ pathname: '/notification/[id]', params: { id: item.id } });
         }}
       >
         <Text style={styles.message}>{item.message}</Text>
@@ -125,42 +123,58 @@ export default function NotificationsScreen() {
       data={notifications}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[styles.container, styles.background]}
+      showsVerticalScrollIndicator={false}
     />
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    backgroundColor: '#f0f2f5',
+    flex: 1,
+  },
   container: {
-    padding: 16,
-    backgroundColor: '#f5f5f5',
+    padding: 12,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  notificationCard: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 12,
-    elevation: 2,
-  },
-  message: {
+  infoText: {
+    color: '#606770',
     fontSize: 16,
-    color: '#3a125d',
   },
-  timestamp: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
+  notificationCard: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   unread: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#3a125d',
+    borderLeftWidth: 5,
+    borderLeftColor: '#1877F2',
   },
   read: {
     opacity: 0.6,
+    borderLeftWidth: 5,
+    borderLeftColor: '#ccc',
+  },
+  message: {
+    fontSize: 15,
+    color: '#1c1e21',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#90949c',
   },
 });

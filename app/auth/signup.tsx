@@ -40,16 +40,18 @@ export default function SignUpScreen() {
         displayName: fullName,
       });
 
-      // Save user details in Firestore
+      // Save user details in Firestore with rating and verified fields
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         fullName,
         nid,
         phone,
         email,
+        rating: 1,         // <-- added initial rating
+        verified: false,   // <-- added initial verified flag
         createdAt: serverTimestamp(),
         work: [],
-        acceptedWorks: [], // ← ADDED: Empty array for accepted works
+        acceptedWorks: [],
       });
 
       setSuccessMsg(`✅ Account created successfully for ${user.email}`);
