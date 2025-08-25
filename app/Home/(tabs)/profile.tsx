@@ -22,7 +22,7 @@ const ProfileScreen = () => {
   const currentUser = auth.currentUser;
 
   // Set your admin UID here
-  const ADMIN_UID = "rccEl7PQ48Y4lZtQpv4lj3lea8i2";
+  const ADMIN_UID = "yarTXhiAlPdFJQyQhajZNeDaWIC2";
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: '#fff',
-    paddingTop: 36,
+    paddingTop: 30,
     paddingBottom: 40,
     paddingHorizontal: 20,
     alignItems: 'center',
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   adminButton: {
-    width: '100%',
+    width: '90%',
     backgroundColor: '#3897f0',
     paddingVertical: 12,
     borderRadius: 24,

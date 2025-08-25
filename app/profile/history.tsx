@@ -3,9 +3,9 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -15,8 +15,10 @@ const DashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [postedCount, setPostedCount] = useState(0);
   const [acceptedCount, setAcceptedCount] = useState(0);
-  const [profileRating, setProfileRating] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
   const [complaintsCount, setComplaintsCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [profileRating, setProfileRating] = useState(0);
 
   const auth = getAuth();
   const db = getFirestore();
@@ -30,6 +32,7 @@ const DashboardScreen = () => {
           router.replace('/auth/login');
           return;
         }
+
         const userDoc = await getDoc(doc(db, 'users', uid));
         if (!userDoc.exists()) {
           alert('User data not found');
@@ -41,7 +44,29 @@ const DashboardScreen = () => {
         setAcceptedCount(userData.acceptedWorks?.length || 0);
         setProfileRating(userData.rating ?? 0);
 
-        const complaintsQuery = query(collection(db, 'complaints'), where('userId', '==', uid));
+        // Pending works
+        const pendingQuery = query(
+          collection(db, 'worked'),
+          where('acceptedBy', '==', uid),
+          where('status', 'in', ['accepted', 'completed_sent'])
+        );
+        const pendingSnapshot = await getDocs(pendingQuery);
+        setPendingCount(pendingSnapshot.size);
+
+        // Completed works
+        const completedQuery = query(
+          collection(db, 'worked'),
+          where('acceptedBy', '==', uid),
+          where('status', '==', 'completed')
+        );
+        const completedSnapshot = await getDocs(completedQuery);
+        setCompletedCount(completedSnapshot.size);
+
+        // Complaints
+        const complaintsQuery = query(
+          collection(db, 'complaints'),
+          where('userId', '==', uid)
+        );
         const complaintsSnapshot = await getDocs(complaintsQuery);
         setComplaintsCount(complaintsSnapshot.size);
       } catch (error) {
@@ -63,15 +88,9 @@ const DashboardScreen = () => {
     );
   }
 
-  const Card = ({ title, value, onPress }: { title: string; value: number | string; onPress?: () => void }) => (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={onPress ? 0.7 : 1}
-      onPress={onPress}
-      disabled={!onPress}
-    >
-      <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={styles.cardValue}>{value}</Text>
+  const ButtonCard = ({ title, onPress }: { title: string; onPress: () => void }) => (
+    <TouchableOpacity style={styles.buttonCard} onPress={onPress} activeOpacity={0.7}>
+      <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
   );
 
@@ -79,18 +98,43 @@ const DashboardScreen = () => {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Dashboard</Text>
 
-      <Card
-        title="Total Posted Works"
-        value={postedCount}
-        onPress={() => router.push('/profile/postedwork')}
-      />
-      <Card
-        title="Total Accepted Works"
-        value={acceptedCount}
-        onPress={() => router.push('/profile/acceptedwork')}
-      />
-      <Card title="Profile Rating" value={`${profileRating.toFixed(1)} ★`} />
-      <Card title="Total Complaints" value={complaintsCount} />
+      {/* Mini dashboard row */}
+      <View style={styles.miniRow}>
+        <View style={[styles.miniCard, { backgroundColor: '#3a125d' }]}>
+          <Text style={styles.miniCardCount}>{postedCount}</Text>
+          <Text style={styles.miniCardTitle}>Posted</Text>
+        </View>
+        <View style={[styles.miniCard, { backgroundColor: '#1877F2' }]}>
+          <Text style={styles.miniCardCount}>{acceptedCount}</Text>
+          <Text style={styles.miniCardTitle}>Accepted</Text>
+        </View>
+        <View style={[styles.miniCard, { backgroundColor: '#e89d07' }]}>
+          <Text style={styles.miniCardCount}>{pendingCount}</Text>
+          <Text style={styles.miniCardTitle}>Pending</Text>
+        </View>
+        <View style={[styles.miniCard, { backgroundColor: '#4caf50' }]}>
+          <Text style={styles.miniCardCount}>{completedCount}</Text>
+          <Text style={styles.miniCardTitle}>Completed</Text>
+        </View>
+        <View style={[styles.miniCard, { backgroundColor: '#f44336' }]}>
+          <Text style={styles.miniCardCount}>{complaintsCount}</Text>
+          <Text style={styles.miniCardTitle}>Complaints</Text>
+        </View>
+      </View>
+
+      {/* Buttons for navigation */}
+      <View style={styles.buttonsSection}>
+        <ButtonCard title="Your Posted Works" onPress={() => router.push('/profile/postedwork')} />
+        <ButtonCard title="Requesting Works" onPress={() => router.push('/profile/acceptedwork')} />
+        <ButtonCard title="Pending Works" onPress={() => router.push('/profile/pendingwork')} />
+        <ButtonCard title="Completed Works" onPress={() => router.push('/profile/completedwork')} />
+        <ButtonCard title="View Complaints" onPress={() => router.push('/profile/pendingwork')} />
+      </View>
+
+      {/* Profile rating */}
+      <View style={styles.ratingSection}>
+        <Text style={styles.ratingText}>Profile Rating: {profileRating.toFixed(1)} ★</Text>
+      </View>
     </ScrollView>
   );
 };
@@ -100,7 +144,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 16,
     backgroundColor: '#f0f2f5',
-    alignItems: 'center',
   },
   centered: {
     flex: 1,
@@ -113,30 +156,57 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1877F2',
     marginBottom: 20,
-    fontFamily: 'Segoe UI',
   },
-  card: {
-    width: '100%',
-    backgroundColor: '#fff',
+  miniRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    flexWrap: 'wrap',
+  },
+  miniCard: {
+    flexBasis: '18%',
+    marginHorizontal: 2,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  miniCardCount: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#fff',
+  },
+  miniCardTitle: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  buttonsSection: {
+    marginBottom: 30,
+  },
+  buttonCard: {
+    backgroundColor: '#1877F2',
     borderRadius: 8,
     paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    marginHorizontal: 10,
+    alignItems: 'center',
   },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#606770',
-    marginBottom: 4,
-  },
-  cardValue: {
-    fontSize: 24,
+  buttonText: {
+    fontSize: 16,
     fontWeight: '700',
+    color: '#fff',
+  },
+  ratingSection: {
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#1c1e21',
   },
 });

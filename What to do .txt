@@ -1,1 +1,37 @@
-3. verify user can only apply for work
+I am building a task-based mobile app using React Native + Expo Router + Firebase Firestore + Firebase Auth.  
+The app flow is like this:
+
+1. Authentication:
+   - Users sign up and log in using Firebase Auth.
+   - Each user has a profile stored in Firestore (name, email, mobile, location, etc.).
+
+2. Posting & Browsing Works:
+   - A user can post a work (task) with details like title, description, price, from-to location, date.
+   - Other users can browse works in a list (with filters for location and category).
+   - Each work card navigates to a details page (`/works/[id]`).
+
+3. Accepting Works:
+   - A user can click "Accept" on a work.
+   - When accepted:
+     - A notification document is created in Firestore for the work poster.
+     - The work’s status is updated (`pending → accepted`).
+
+4. Notifications:
+   - The work poster can open a **Notifications page**.
+   - Each notification shows work info + worker info.
+   - The poster can **Accept** (status → "completed") or **Reject** (status → "rejected").
+
+5. Profile:
+   - Each user can view their profile page.
+   - Profile shows all info (name, email, mobile, etc.).
+   - Buttons: **Edit Profile** (can edit name & mobile), **History** (past works), and **Logout**.
+
+6. Navigation:
+   - Using `expo-router` with `(tabs)` folder for bottom navigation.
+   - Tabs: Home, Works, Profile, Notifications.
+
+7. Firestore Schema:
+   - `users`: { uid, fullName, email, mobile, location }
+   - `works`: { id, userId, title, description, price, from, to, date, status }
+   - `notifications`: { id, workId, toUserId, fromUserId, status }
+

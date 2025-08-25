@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { collection, doc, setDoc, Timestamp, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, doc, setDoc, Timestamp, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
 import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
@@ -26,6 +26,7 @@ const categories = [
 export default function PostWorkScreen() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userVerified, setUserVerified] = useState<boolean>(false);
 
   const [jobTitle, setJobTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -40,9 +41,15 @@ export default function PostWorkScreen() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
+        // Fetch user verification status
+        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          setUserVerified(!!userData.verified);
+        }
       } else {
         router.replace('/home/(tabs)');
       }
@@ -54,6 +61,11 @@ export default function PostWorkScreen() {
   const handlePostWork = async () => {
     if (!currentUser) {
       Alert.alert('Error', 'You must be logged in to post work.');
+      return;
+    }
+
+    if (!userVerified) {
+      Alert.alert('Verification Required', 'You need to be a verified user to post work.');
       return;
     }
 
@@ -84,7 +96,7 @@ export default function PostWorkScreen() {
         endDate: Timestamp.fromDate(normalizedEndDate),
         createdAt: Timestamp.now(),
         status: 'active',
-        images: [], // empty array since image upload is removed
+        images: [],
       };
 
       await setDoc(workRef, workData);
@@ -229,7 +241,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3a125d',
     marginVertical: 10,
-    marginLeft: 10,
+    marginLeft: 30,
   },
   input: {
     height: 48,
@@ -238,7 +250,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 15,
     marginBottom: 12,
-    marginHorizontal: 10,
+    marginHorizontal: 30,
     backgroundColor: '#fff',
     color: '#544d4d',
     justifyContent: 'center',
@@ -248,9 +260,9 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 10,
-    backgroundColor: '#3a125d',
+    backgroundColor: '#0184ffff',
     paddingVertical: 14,
-    marginHorizontal: 10,
+    marginHorizontal: 30,
     borderRadius: 10,
     alignItems: 'center',
     marginBottom: 20,

@@ -45,7 +45,7 @@ export default function ShowAllUsers() {
   const auth = getAuth();
   const currentUser = auth.currentUser;
 
-  const ADMIN_UID = "rccEl7PQ48Y4lZtQpv4lj3lea8i2";
+  const ADMIN_UID = "yarTXhiAlPdFJQyQhajZNeDaWIC2";
 
   useEffect(() => {
     fetchUsersAndStats();
@@ -149,7 +149,7 @@ export default function ShowAllUsers() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#3a125d" />
+        <ActivityIndicator size="large" color="#0184ffff" />
       </View>
     );
   }
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 16,
-    color: "#3a125d",
+    color: "#0184ffff",
     textAlign: "center",
   },
   userCard: {
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   profileSection: {
-    backgroundColor: "#6c5ce7",
+    backgroundColor: "#0184ffff",
     padding: 16,
   },
   name: {

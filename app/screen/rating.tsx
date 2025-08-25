@@ -9,12 +9,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { getAuth } from 'firebase/auth';
 
 export default function RatingScreen() {
-  const { ratedUserId } = useLocalSearchParams<{ ratedUserId: string }>();
+  const { ratedUserId, workId } = useLocalSearchParams<{ ratedUserId: string; workId: string }>();
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -82,11 +82,10 @@ export default function RatingScreen() {
       const newRatingCount = oldRatingCount + 1;
       const newRating = (oldRating * oldRatingCount + rating) / newRatingCount;
 
-      // Update user's rating and count
+      // Update user's rating and reviews
       await updateDoc(userRef, {
         rating: newRating,
         ratingCount: newRatingCount,
-        // Optionally save individual reviews/comments
         reviews: arrayUnion({
           reviewerId: currentUser.uid,
           rating,
@@ -95,10 +94,15 @@ export default function RatingScreen() {
         }),
       });
 
+      // Update work status to "completed"
+      if (workId) {
+        await updateDoc(doc(db, 'worked', workId), { status: 'completed' });
+      }
+
       Alert.alert('Success', 'Rating submitted successfully!', [
         {
           text: 'OK',
-          onPress: () => router.back(),
+          onPress: () => router.push('/home'),
         },
       ]);
     } catch (error) {
@@ -109,19 +113,17 @@ export default function RatingScreen() {
     }
   };
 
-  const renderStar = (starNumber: number) => {
-    return (
-      <TouchableOpacity
-        key={starNumber}
-        onPress={() => setRating(starNumber)}
-        style={{ marginHorizontal: 4 }}
-      >
-        <Text style={[styles.star, rating >= starNumber ? styles.starSelected : styles.starUnselected]}>
-          ★
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+  const renderStar = (starNumber: number) => (
+    <TouchableOpacity
+      key={starNumber}
+      onPress={() => setRating(starNumber)}
+      style={{ marginHorizontal: 4 }}
+    >
+      <Text style={[styles.star, rating >= starNumber ? styles.starSelected : styles.starUnselected]}>
+        ★
+      </Text>
+    </TouchableOpacity>
+  );
 
   if (loading) {
     return (
@@ -135,9 +137,7 @@ export default function RatingScreen() {
     <View style={[styles.container, styles.background]}>
       <Text style={styles.header}>Rate {userName}</Text>
 
-      <View style={styles.starRow}>
-        {[1, 2, 3, 4, 5].map(renderStar)}
-      </View>
+      <View style={styles.starRow}>{[1, 2, 3, 4, 5].map(renderStar)}</View>
 
       <TextInput
         style={styles.textInput}
@@ -156,58 +156,15 @@ export default function RatingScreen() {
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    backgroundColor: '#f0f2f5',
-    padding: 20,
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 20,
-    color: '#1877F2',
-    textAlign: 'center',
-  },
-  starRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  star: {
-    fontSize: 40,
-  },
-  starSelected: {
-    color: '#fbc02d',
-  },
-  starUnselected: {
-    color: '#ddd',
-  },
-  textInput: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 24,
-    textAlignVertical: 'top',
-  },
-  submitBtn: {
-    backgroundColor: '#1877F2',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  submitBtnText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  background: { flex: 1, backgroundColor: '#f0f2f5', padding: 20 },
+  container: { flex: 1, justifyContent: 'center' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { fontSize: 24, fontWeight: '700', marginBottom: 20, color: '#1877F2', textAlign: 'center' },
+  starRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 24 },
+  star: { fontSize: 40 },
+  starSelected: { color: '#fbc02d' },
+  starUnselected: { color: '#ddd' },
+  textInput: { backgroundColor: '#fff', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 24, textAlignVertical: 'top' },
+  submitBtn: { backgroundColor: '#1877F2', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  submitBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },
 });

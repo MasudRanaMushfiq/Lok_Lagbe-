@@ -101,7 +101,7 @@ export default function WorksScreen() {
   if (loading && !refreshing) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#3a125d" />
+        <ActivityIndicator size="large" color="#3897f0" />
       </View>
     );
   }
@@ -110,7 +110,7 @@ export default function WorksScreen() {
     <ScrollView
       contentContainerStyle={styles.container}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#3a125d']} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#3897f0']} />
       }
     >
       <Text style={styles.header}>Available Works</Text>
@@ -118,7 +118,7 @@ export default function WorksScreen() {
       {/* Filters */}
       <View style={styles.filtersRow}>
         <View style={styles.filterContainer}>
-          <Ionicons name="filter" size={24} color="#3a125d" style={styles.filterIcon} />
+          <Ionicons name="filter" size={24} color="#3897f0" style={styles.filterIcon} />
           <View style={styles.pickerWrapper}>
             <RNPickerSelect
               onValueChange={setSelectedCategory}
@@ -132,7 +132,7 @@ export default function WorksScreen() {
         </View>
 
         <View style={styles.filterContainer}>
-          <Ionicons name="location" size={24} color="#3a125d" style={styles.filterIcon} />
+          <Ionicons name="location" size={24} color="#3897f0" style={styles.filterIcon} />
           <View style={styles.pickerWrapper}>
             <RNPickerSelect
               onValueChange={setSelectedLocation}
@@ -198,14 +198,14 @@ export default function WorksScreen() {
 const styles = StyleSheet.create({
   container: { padding: 16, backgroundColor: '#f5f5f5' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { fontSize: 24, fontWeight: 'bold', color: '#3a125d',marginTop: 30, marginBottom: 20, textAlign: 'center' },
+  header: { fontSize: 24, fontWeight: 'bold', color: '#3897f0',marginTop: 20, marginBottom: 20, textAlign: 'center' },
   filtersRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, marginBottom: 20 },
   filterContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, padding: 10, elevation: 2 },
   filterIcon: { marginRight: 10 },
   pickerWrapper: { flex: 1 },
   noWorksText: { fontSize: 18, color: '#544d4d', textAlign: 'center', marginTop: 20 },
   workCard: { backgroundColor: 'white', borderRadius: 10, padding: 16, marginBottom: 16, elevation: 2 },
-  workTitle: { fontSize: 18, fontWeight: 'bold', color: '#3a125d', marginBottom: 4 },
+  workTitle: { fontSize: 18, fontWeight: 'bold', color: '#3897f0', marginBottom: 4 },
   workCategory: { fontSize: 14, color: '#19A7CE', marginBottom: 12, fontStyle: 'italic' },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   detailLabel: { fontSize: 14, fontWeight: '600', color: '#3a125d' },
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
 });
 
 const pickerSelectStyles = StyleSheet.create({
-  inputIOS: { fontSize: 14, color: '#3a125d', paddingVertical: 8, flex: 1 },
-  inputAndroid: { fontSize: 14, color: '#3a125d', paddingVertical: 8, flex: 1 },
+  inputIOS: { fontSize: 14, color: '#3897f0', paddingVertical: 8, flex: 1 },
+  inputAndroid: { fontSize: 14, color: '#3897f0', paddingVertical: 8, flex: 1 },
   placeholder: { color: '#888' },
 });

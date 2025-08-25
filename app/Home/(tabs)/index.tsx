@@ -1,4 +1,3 @@
-
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
@@ -13,6 +12,9 @@ import {
 } from 'react-native';
 
 import { getAuth } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../../../firebaseConfig';
 
 const categories = [
   { name: 'Cleaning', icon: 'broom' },
@@ -41,14 +43,37 @@ const categories = [
 const { width } = Dimensions.get('window');
 const numColumns = 3;
 const horizontalMargin = 6;
-const cardWidth = (width - 2 * 16 - (numColumns * 2 * horizontalMargin)) / numColumns;
+const cardWidth =
+  (width - 2 * 16 - numColumns * 2 * horizontalMargin) / numColumns;
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [hasUnread, setHasUnread] = useState(false);
+
+  // 🔴 Listen for unread notifications
+  useEffect(() => {
+    const user = getAuth().currentUser;
+    if (!user) return;
+
+    const q = query(
+      collection(db, 'notifications'),
+      where('toUserId', '==', user.uid),
+      where('read', '==', false)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setHasUnread(!snapshot.empty); // true if any unread notification
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleCategoryPress = (category: { name: string; icon: string }) => {
     const categoryName = category.name.toLowerCase().replace(/\s+/g, '-');
-    router.push({ pathname: '/category/[category]', params: { category: categoryName } });
+    router.push({
+      pathname: '/category/[category]',
+      params: { category: categoryName },
+    });
   };
 
   const handleNotificationPress = async () => {
@@ -60,7 +85,7 @@ export default function HomeScreen() {
         return;
       }
 
-      router.push('/notification/notification');
+      router.push('/notification/notification'); // ✅ corrected path
     } catch (error) {
       console.error('Error loading notifications:', error);
       Alert.alert('Error', 'Failed to load notifications.');
@@ -73,14 +98,23 @@ export default function HomeScreen() {
         <View style={styles.headingRow}>
           <View style={styles.headingWrap}>
             <Text style={styles.heading}>Lok Lagbe?</Text>
-            <Text style={styles.tagline}>Find trusted professionals for any service</Text>
+            <Text style={styles.tagline}>
+              Find trusted professionals for any service
+            </Text>
           </View>
           <TouchableOpacity
             style={styles.notificationBtn}
             activeOpacity={0.7}
             onPress={handleNotificationPress}
           >
-            <MaterialCommunityIcons name="bell-outline" size={28} color="#ff6347" />
+            <View style={{ position: 'relative' }}>
+              <MaterialCommunityIcons
+                name="bell-outline"
+                size={28}
+                color="#3897f0"
+              />
+              {hasUnread && <View style={styles.redDot} />}
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -98,7 +132,11 @@ export default function HomeScreen() {
               onPress={() => handleCategoryPress(item)}
             >
               <MaterialCommunityIcons
-                name={item.icon as React.ComponentProps<typeof MaterialCommunityIcons>['name']}
+                name={
+                  item.icon as React.ComponentProps<
+                    typeof MaterialCommunityIcons
+                  >['name']
+                }
                 size={26}
                 color="#ff6347"
                 style={{ marginBottom: 6 }}
@@ -131,7 +169,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f6f7fb',
-    paddingTop: 50,
+    paddingTop: 30,
     paddingHorizontal: 16,
   },
   headingRow: {
@@ -148,7 +186,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 34,
     fontWeight: 'bold',
-    color: '#222',
+    color: '#0184ffff',
     letterSpacing: 0.5,
     marginBottom: 2,
     textAlign: 'left',
@@ -167,11 +205,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#fff',
     elevation: 2,
-    shadowColor: '#ff6347',
+    shadowColor: '#3897f0',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
     alignSelf: 'flex-start',
+  },
+  redDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'red',
   },
   categoriesHeading: {
     fontSize: 20,
@@ -209,13 +256,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   postBtn: {
-    backgroundColor: '#ff6347',
+    backgroundColor: '#3897f0',
     paddingVertical: 10,
     paddingHorizontal: 48,
     borderRadius: 30,
     alignItems: 'center',
     elevation: 4,
-    shadowColor: '#ff6347',
+    shadowColor: '#3897f0',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18,
     shadowRadius: 6,

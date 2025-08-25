@@ -13,6 +13,10 @@ import {
   getFirestore,
   doc,
   getDoc,
+  updateDoc,
+  addDoc,
+  collection,
+  Timestamp,
 } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 
@@ -74,9 +78,8 @@ export default function AcceptedWorksScreen() {
               return null;
             })
           )
-        )
-          .filter(Boolean)
-          .filter(work => work?.status === 'accepted_sent') as WorkData[]; // Only accepted_sent
+        ).filter(Boolean)
+         .filter(work => work?.status === 'accepted') as WorkData[]; // Only keep accepted works
 
         setAcceptedWorks(works);
       } catch (error) {
@@ -109,6 +112,36 @@ export default function AcceptedWorksScreen() {
     }
   };
 
+  const handleCompleted = async (work: WorkData) => {
+    if (!currentUser || !work.userId) return;
+
+    try {
+      await updateDoc(doc(db, 'worked', work.id), { status: 'completed_sent' });
+
+      await addDoc(collection(db, 'notifications'), {
+        toUserId: work.userId,
+        fromUserId: currentUser.uid,
+        workId: work.id,
+        message: `Your work "${work.jobTitle}" has been completed by the worker. Please Confirm`,
+        createdAt: Timestamp.now(),
+        read: false,
+      });
+
+      Alert.alert('Request Sent', 'Wait for Confirmation');
+
+      setAcceptedWorks((prev) =>
+        prev.map((w) =>
+          w.id === work.id ? { ...w, status: 'completed' } : w
+        )
+      );
+
+      router.replace('/home');
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to mark as completed');
+    }
+  };
+
   const renderWorkCard = (work: WorkData) => (
     <View key={work.id} style={styles.workCard}>
       <Text style={styles.workTitle}>{work.jobTitle}</Text>
@@ -129,7 +162,7 @@ export default function AcceptedWorksScreen() {
 
       <View style={styles.detailRow}>
         <Text style={styles.detailLabel}>Status:</Text>
-        <Text style={[styles.detailValue, styles.acceptedStatus]}>
+        <Text style={[styles.detailValue, styles.completedStatus]}>
           {work.status}
         </Text>
       </View>
@@ -141,12 +174,19 @@ export default function AcceptedWorksScreen() {
         </Text>
       </View>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginTop: 10 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
         <TouchableOpacity
           style={styles.contactBtn}
           onPress={() => handleContact(work.userId)}
         >
           <Text style={styles.contactBtnText}>Contact</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.completedBtn}
+          onPress={() => handleCompleted(work)}
+        >
+          <Text style={styles.completedBtnText}>Completed</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -162,9 +202,9 @@ export default function AcceptedWorksScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.sectionTitle}>Accepted Request Send Works</Text>
+      <Text style={styles.sectionTitle}>Your Pending Works</Text>
       {acceptedWorks.length === 0 ? (
-        <Text style={styles.noWorksText}>No works are pending now</Text>
+        <Text style={styles.noWorksText}>No works is pending now</Text>
       ) : (
         acceptedWorks.map(renderWorkCard)
       )}
@@ -243,18 +283,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4b4f56',
   },
-  acceptedStatus: {
-    color: '#3a125d',
+  completedStatus: {
+    color: '#1877F2',
     fontWeight: '700',
   },
   contactBtn: {
+    flex: 1,
     backgroundColor: '#3a125d',
     paddingVertical: 10,
-    paddingHorizontal: 16,
     borderRadius: 6,
+    marginRight: 8,
     alignItems: 'center',
   },
   contactBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  completedBtn: {
+    flex: 1,
+    backgroundColor: '#e89d07',
+    paddingVertical: 10,
+    borderRadius: 6,
+    marginLeft: 8,
+    alignItems: 'center',
+  },
+  completedBtnText: {
     color: '#fff',
     fontWeight: '700',
   },

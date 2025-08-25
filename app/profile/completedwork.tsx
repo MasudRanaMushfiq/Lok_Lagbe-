@@ -11,8 +11,8 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 
-const PostedWorksScreen = () => {
-  const [postedWorks, setPostedWorks] = useState<any[]>([]);
+const CompletedWorksScreen = () => {
+  const [completedWorks, setCompletedWorks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const auth = getAuth();
@@ -20,7 +20,7 @@ const PostedWorksScreen = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchPostedWorks = async () => {
+    const fetchCompletedWorks = async () => {
       try {
         const uid = auth.currentUser?.uid;
         if (!uid) {
@@ -33,19 +33,22 @@ const PostedWorksScreen = () => {
           return;
         }
         const userData = userDoc.data();
-        const postedIds = userData.postedWorks || [];
+        const acceptedIds = userData.acceptedWorks || [];
 
         const works = await Promise.all(
-          postedIds.map(async (id: string) => {
+          acceptedIds.map(async (id: string) => {
             try {
               const docSnap = await getDoc(doc(db, 'worked', id));
               if (docSnap.exists()) {
                 const data = docSnap.data();
-                return {
-                  id: docSnap.id,
-                  ...data,
-                  createdAt: data.createdAt?.toDate?.() || null,
-                };
+                // Only include works that are accepted (completed)
+                if (data.status === 'completed') {
+                  return {
+                    id: docSnap.id,
+                    ...data,
+                    createdAt: data.createdAt?.toDate?.() || null,
+                  };
+                }
               }
               return null;
             } catch (error) {
@@ -55,16 +58,16 @@ const PostedWorksScreen = () => {
           })
         );
 
-        setPostedWorks(works.filter(Boolean));
+        setCompletedWorks(works.filter(Boolean));
       } catch (error) {
-        console.error('Error fetching posted works:', error);
-        Alert.alert('Error', 'Failed to fetch posted works');
+        console.error('Error fetching completed works:', error);
+        Alert.alert('Error', 'Failed to fetch completed works');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPostedWorks();
+    fetchCompletedWorks();
   }, []);
 
   const renderWorkCard = (work: any) => (
@@ -87,13 +90,8 @@ const PostedWorksScreen = () => {
 
       <View style={styles.detailRow}>
         <Text style={styles.detailLabel}>Status:</Text>
-        <Text
-          style={[
-            styles.detailValue,
-            work.status === 'active' ? styles.activeStatus : styles.inactiveStatus,
-          ]}
-        >
-          {work.status}
+        <Text style={[styles.detailValue, styles.completedStatus]}>
+          Completed
         </Text>
       </View>
 
@@ -116,11 +114,11 @@ const PostedWorksScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.sectionTitle}>Your Posted Works</Text>
-      {postedWorks.length === 0 ? (
-        <Text style={styles.noWorksText}>No posted works found</Text>
+      <Text style={styles.sectionTitle}>Your Completed Works</Text>
+      {completedWorks.length === 0 ? (
+        <Text style={styles.noWorksText}>No completed works found</Text>
       ) : (
-        postedWorks.map(renderWorkCard)
+        completedWorks.map(renderWorkCard)
       )}
     </ScrollView>
   );
@@ -197,14 +195,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4b4f56',
   },
-  activeStatus: {
+  completedStatus: {
     color: '#4CAF50',
-    fontWeight: '700',
-  },
-  inactiveStatus: {
-    color: '#f44336',
     fontWeight: '700',
   },
 });
 
-export default PostedWorksScreen;
+export default CompletedWorksScreen;

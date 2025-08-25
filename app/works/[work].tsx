@@ -96,7 +96,7 @@ export default function WorkDetails() {
       await updateDoc(workRef, {
         acceptedBy: acceptingUserId,
         acceptedAt: Timestamp.now(),
-        status: 'pending',
+        status: 'accepted_sent',
       });
 
       const userSnap = await getDoc(userRef);
@@ -117,7 +117,7 @@ export default function WorkDetails() {
           toUserId: workData.userId,
           fromUserId: acceptingUserId,
           workId: id,
-          message: `Will you accept "${workData.jobTitle || 'Untitled'}" work?`,
+          message: `Will you allow to do "${workData.jobTitle || 'Untitled'}" work done by him?`,
           createdAt: Timestamp.now(),
           read: false,
         });
@@ -128,14 +128,10 @@ export default function WorkDetails() {
         console.log('Notification created with ID:', notifRef.id);
       }
 
-      Alert.alert('Success', 'You have accepted this work!');
+      Alert.alert('Success', 'You have applied for this work!');
 
-      setWorkData((prev: any) => ({
-        ...prev,
-        acceptedBy: acceptingUserId,
-        acceptedAt: new Date(),
-        status: 'pending',
-      }));
+      // Redirect to home after success
+      router.push('/home/(tabs)');
     } catch (error) {
       console.error('Error accepting work:', error);
       Alert.alert('Error', 'Failed to accept the work. Please try again.');
@@ -204,7 +200,7 @@ export default function WorkDetails() {
             disabled={accepting}
           >
             <Text style={styles.acceptButtonText}>
-              {accepting ? 'Accepting...' : 'Accept Work'}
+              {accepting ? 'Accepting...' : 'Do Work'}
             </Text>
           </TouchableOpacity>
         ) : (
@@ -214,13 +210,6 @@ export default function WorkDetails() {
             </Text>
           </View>
         )}
-
-        <TouchableOpacity
-          style={styles.homeButton}
-          onPress={() => router.push('/home/(tabs)')}
-        >
-          <Text style={styles.homeButtonText}>Go to Home</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -315,7 +304,7 @@ const styles = StyleSheet.create({
   acceptButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 20,
   },
   statusContainer: {
     marginTop: 10,
@@ -326,18 +315,6 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: '#F44336',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  homeButton: {
-    marginTop: 30,
-    backgroundColor: '#e89d07',
-    paddingVertical: 14,
-    borderRadius: 50,
-    alignItems: 'center',
-  },
-  homeButtonText: {
-    color: '#ffffffff',
     fontWeight: 'bold',
     fontSize: 16,
   },

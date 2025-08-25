@@ -17,7 +17,7 @@ export default function TabLayout() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#ff6347',
+        tabBarActiveTintColor: '#3897f0',
         tabBarInactiveTintColor: '#888',
         tabBarStyle: {
           backgroundColor: '#fff',

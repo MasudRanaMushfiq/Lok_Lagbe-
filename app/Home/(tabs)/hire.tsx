@@ -99,14 +99,14 @@ export default function HireScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 20,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     backgroundColor: '#eceefc',
   },
   header: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#3a125d',
+    color: '#3897f0',
     marginBottom: 20,
     marginTop: 30,
     textAlign: 'center',
@@ -117,14 +117,14 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
     elevation: 3,
-    shadowColor: '#3a125d',
+    shadowColor: '#3897f0',
     shadowOpacity: 0.1,
     shadowRadius: 8,
   },
   jobTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#3a125d',
+    color: '#3897f0',
     marginBottom: 8,
   },
   description: {
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   hireButton: {
-    backgroundColor: '#3a125d',
+    backgroundColor: '#3897f0',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
