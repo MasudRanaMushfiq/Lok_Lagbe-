@@ -53,12 +53,12 @@ export default function WorkDetails() {
         const work = workSnap.data();
         setWorkData(work);
 
-        if (work.userId) {
+        if (work?.userId) {
           const userRef = doc(db, 'users', work.userId);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
             const user = userSnap.data();
-            setPosterName(user.fullName || 'Unknown User');
+            setPosterName(user?.fullName || 'Unknown User');
           } else {
             setPosterName('Unknown User');
           }
@@ -82,27 +82,35 @@ export default function WorkDetails() {
       return;
     }
 
-    if (workData.status !== 'active') {
+    if (!workData || !id) {
+      Alert.alert('Error', 'Work data not loaded.');
+      return;
+    }
+
+    if (workData?.status !== 'active') {
       Alert.alert('Unavailable', 'This work is not available for acceptance.');
       return;
     }
 
     setAccepting(true);
+
     try {
       const acceptingUserId = currentUser.uid;
       const workRef = doc(db, 'worked', id as string);
       const userRef = doc(db, 'users', acceptingUserId);
 
+      // Update work document
       await updateDoc(workRef, {
         acceptedBy: acceptingUserId,
         acceptedAt: Timestamp.now(),
         status: 'accepted_sent',
       });
 
+      // Update user's accepted works
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const userData = userSnap.data();
-        const currentAccepted: string[] = userData.acceptedWorks || [];
+        const currentAccepted: string[] = userData?.acceptedWorks || [];
 
         if (!currentAccepted.includes(id as string)) {
           await updateDoc(userRef, {
@@ -111,27 +119,23 @@ export default function WorkDetails() {
         }
       }
 
-      // Add notification and then update it with its own document ID
-      if (workData.userId) {
+      // Add notification
+      if (workData?.userId) {
         const notifRef = await addDoc(collection(db, 'notifications'), {
           toUserId: workData.userId,
           fromUserId: acceptingUserId,
           workId: id,
           type: 'accepted_sent',
-          message: `Will you allow to do "${workData.jobTitle || 'Untitled'}" work done by him?`,
+          message: `Will you allow to do "${workData?.jobTitle || 'Untitled'}" work done by him?`,
           createdAt: Timestamp.now(),
           read: false,
         });
 
-        // Update the notification doc with its own ID
         await updateDoc(notifRef, { notificationId: notifRef.id });
-
         console.log('Notification created with ID:', notifRef.id);
       }
 
       Alert.alert('Success', 'You have applied for this work!');
-
-      // Redirect to home after success
       router.push('/home/(tabs)');
     } catch (error) {
       console.error('Error accepting work:', error);
@@ -160,7 +164,7 @@ export default function WorkDetails() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>{workData.jobTitle}</Text>
+        <Text style={styles.title}>{workData?.jobTitle || 'Untitled Work'}</Text>
         <Text style={styles.postedBy}>
           Posted by: <Text style={styles.postedByName}>{posterName}</Text>
         </Text>
@@ -168,33 +172,35 @@ export default function WorkDetails() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.sectionContent}>
-            {workData.description || 'No description provided.'}
+            {workData?.description || 'No description provided.'}
           </Text>
         </View>
 
         <View style={styles.row}>
           <View style={styles.infoBox}>
             <Text style={styles.infoLabel}>Start Date</Text>
-            <Text style={styles.infoValue}>{formatDate(workData.startDate)}</Text>
+            <Text style={styles.infoValue}>{formatDate(workData?.startDate)}</Text>
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoLabel}>End Date</Text>
-            <Text style={styles.infoValue}>{formatDate(workData.endDate)}</Text>
+            <Text style={styles.infoValue}>{formatDate(workData?.endDate)}</Text>
           </View>
         </View>
 
         <View style={styles.row}>
           <View style={styles.infoBox}>
             <Text style={styles.infoLabel}>Location</Text>
-            <Text style={styles.infoValue}>{workData.location}</Text>
+            <Text style={styles.infoValue}>{workData?.location || 'N/A'}</Text>
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoLabel}>Price</Text>
-            <Text style={[styles.infoValue, styles.price]}>৳{workData.price}</Text>
+            <Text style={[styles.infoValue, styles.price]}>
+              ৳{workData?.price || 0}
+            </Text>
           </View>
         </View>
 
-        {workData.status === 'active' ? (
+        {workData?.status === 'active' ? (
           <TouchableOpacity
             style={[styles.acceptButton, accepting && styles.disabledButton]}
             onPress={handleAccept}
@@ -207,7 +213,7 @@ export default function WorkDetails() {
         ) : (
           <View style={styles.statusContainer}>
             <Text style={styles.statusText}>
-              Status: {workData.status.toUpperCase()}
+              Status: {workData?.status?.toUpperCase() || 'UNKNOWN'}
             </Text>
           </View>
         )}
@@ -217,16 +223,8 @@ export default function WorkDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    backgroundColor: '#eceefc',
-    flexGrow: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { padding: 16, backgroundColor: '#eceefc', flexGrow: 1 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -236,39 +234,13 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#3a125d',
-    marginBottom: 8,
-  },
-  postedBy: {
-    fontSize: 14,
-    color: '#636060',
-    marginBottom: 20,
-  },
-  postedByName: {
-    fontWeight: '600',
-    color: '#e89d07',
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#3a125d',
-    marginBottom: 6,
-  },
-  sectionContent: {
-    fontSize: 16,
-    color: '#544d4d',
-    lineHeight: 22,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#3a125d', marginBottom: 8 },
+  postedBy: { fontSize: 14, color: '#636060', marginBottom: 20 },
+  postedByName: { fontWeight: '600', color: '#e89d07' },
+  section: { marginBottom: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#3a125d', marginBottom: 6 },
+  sectionContent: { fontSize: 16, color: '#544d4d', lineHeight: 22 },
+  row: { flexDirection: 'row', justifyContent: 'space-between' },
   infoBox: {
     flex: 1,
     backgroundColor: '#f5f6fb',
@@ -278,45 +250,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: 'flex-start',
   },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3a125d',
-    marginBottom: 6,
-  },
-  infoValue: {
-    fontSize: 16,
-    color: '#544d4d',
-  },
-  price: {
-    fontWeight: 'bold',
-    color: '#e89d07',
-  },
-  acceptButton: {
-    backgroundColor: '#3a125d',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  disabledButton: {
-    backgroundColor: '#7a6999',
-  },
-  acceptButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 20,
-  },
-  statusContainer: {
-    marginTop: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-    backgroundColor: '#ffebee',
-  },
-  statusText: {
-    color: '#F44336',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  infoLabel: { fontSize: 14, fontWeight: '600', color: '#3a125d', marginBottom: 6 },
+  infoValue: { fontSize: 16, color: '#544d4d' },
+  price: { fontWeight: 'bold', color: '#e89d07' },
+  acceptButton: { backgroundColor: '#3a125d', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+  disabledButton: { backgroundColor: '#7a6999' },
+  acceptButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 20 },
+  statusContainer: { marginTop: 10, paddingVertical: 12, alignItems: 'center', borderRadius: 8, backgroundColor: '#ffebee' },
+  statusText: { color: '#F44336', fontWeight: 'bold', fontSize: 16 },
 });

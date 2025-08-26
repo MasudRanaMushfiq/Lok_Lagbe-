@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../../firebaseConfig';
 
 const ProfileScreen = () => {
@@ -49,8 +50,9 @@ const ProfileScreen = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
-      router.replace('/auth/login');
+      await signOut(auth); // clear firebase session
+      await AsyncStorage.removeItem('user'); // clear persisted login
+      router.replace('/auth/login'); // go back to login page
     } catch (error) {
       console.error('Logout error:', error);
       Alert.alert('Error', 'Failed to logout');

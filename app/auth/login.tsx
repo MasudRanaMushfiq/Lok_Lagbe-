@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,18 +7,30 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../firebaseConfig'; // adjust the path if needed
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../../firebaseConfig'; // ✅ make sure updated firebaseConfig
 
 const LogIn: React.FC = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true); // 👈 state for auth checking
+
+  // ✅ Check if user already logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // already logged in -> go to home
+        router.replace('/home');
+      }
+      setCheckingAuth(false); // stop loading
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleChange = (key: keyof typeof formData, value: string) => {
     setFormData({ ...formData, [key]: value });
@@ -45,6 +57,14 @@ const LogIn: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#146C94" />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -114,7 +134,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     width: '100%',
     maxWidth: 400,
-    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.6)',
   },
   title: {
     fontSize: 24,
