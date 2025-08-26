@@ -6,7 +6,6 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import {
   collection,
@@ -25,6 +24,7 @@ type Notification = {
   createdAt: any;
   read: boolean;
   workId: string;
+  type: string; // 👈 added type from firebase
 };
 
 export default function NotificationsScreen() {
@@ -59,6 +59,7 @@ export default function NotificationsScreen() {
             createdAt: data.createdAt,
             read: data.read,
             workId: data.workId,
+            type: data.type, // 👈 store type
           });
         });
         setNotifications(notifList);
@@ -97,6 +98,30 @@ export default function NotificationsScreen() {
     );
   }
 
+  // 👇 handle routing based on notification type & forward ID
+  const handleNotificationPress = (item: Notification) => {
+    switch (item.type) {
+      case 'general':
+        router.push({ pathname: '/notification/general', params: { id: item.id } });
+        break;
+      case 'accepted':
+        router.push({ pathname: '/notification/accepted', params: { id: item.id } });
+        break;
+      case 'accepted_sent':
+        router.push({ pathname: '/notification/acceptedsent', params: { id: item.id } });
+        break;
+      case 'completed_sent':
+        router.push({ pathname: '/notification/completesent', params: { id: item.id } });
+        break;
+      case 'completed':
+        router.push({ pathname: '/notification/completed', params: { id: item.id } });
+        break;
+      default:
+        // fallback route if type not matched
+        router.push({ pathname: '/notification/general', params: { id: item.id } });
+    }
+  };
+
   const renderItem = ({ item }: { item: Notification }) => {
     const date = item.createdAt?.toDate ? item.createdAt.toDate() : new Date();
 
@@ -107,10 +132,7 @@ export default function NotificationsScreen() {
           styles.notificationCard,
           item.read ? styles.read : styles.unread,
         ]}
-        onPress={() => {
-          // Push notification id here
-          router.push({ pathname: '/notification/[id]', params: { id: item.id } });
-        }}
+        onPress={() => handleNotificationPress(item)}
       >
         <Text style={styles.message}>{item.message}</Text>
         <Text style={styles.timestamp}>{date.toLocaleString()}</Text>

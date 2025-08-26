@@ -64,7 +64,6 @@ export default function PaymentScreen() {
       // Update work status to accepted
       await updateDoc(doc(db, 'worked', workId), {
         status: 'accepted',
-        acceptedBy: currentUser.uid,
         acceptedAt: Timestamp.now(),
         transactionId: transactionId.trim(),
       });

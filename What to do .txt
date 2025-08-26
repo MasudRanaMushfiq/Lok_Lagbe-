@@ -35,3 +35,44 @@ The app flow is like this:
    - `works`: { id, userId, title, description, price, from, to, date, status }
    - `notifications`: { id, workId, toUserId, fromUserId, status }
 
+
+
+
+
+
+
+Here’s a concise prompt summarizing your app, its UI style, and overview:
+
+---
+
+**App Overview:**
+Your app is a **task marketplace platform**, where users can **post tasks**, others can **accept and complete tasks**, and notifications manage task progress. Users can track their **posted, accepted, pending, and completed works**, as well as **complaints**. The app supports **worker-poster interaction** and **status updates** for tasks (accepted, completed\_sent, completed).
+
+**Key Features:**
+
+* Post and manage tasks
+* Accept or give work to others
+* Track pending and completed tasks
+* Notifications for task actions
+* Contact poster/worker for each task
+* Dashboard with task summary and profile rating
+
+**UI Style and Color Palette:**
+
+* **Primary Color:** #3a125d → Buttons, cards, highlights
+* **Secondary Color:** #e89d07 → Action buttons, status indicators
+* **Accent Color:** #1877F2 → Headers, important texts
+* **Background Color:** #f0f2f5 → App background
+* **Text Color:** #4b4f56 / #1c1e21 → General text
+* **Disabled / Minor Text:** #606770
+
+**UI Overview:**
+
+* **Dashboard:** Summary of Posted, Accepted, Pending, Completed, Complaints
+* **Task Cards:** Shows title, description, price, location, status, and action buttons
+* **Notifications:** Details task status updates and allows confirming/rejecting work
+* **Action Buttons:** Distinct color coding (Primary: #3a125d, Action: #e89d07, Confirm: #1877F2, Reject: #d9534f)
+
+---
+
+

@@ -117,6 +117,7 @@ export default function WorkDetails() {
           toUserId: workData.userId,
           fromUserId: acceptingUserId,
           workId: id,
+          type: 'accepted_sent',
           message: `Will you allow to do "${workData.jobTitle || 'Untitled'}" work done by him?`,
           createdAt: Timestamp.now(),
           read: false,
