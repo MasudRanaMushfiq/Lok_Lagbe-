@@ -1,34 +1,48 @@
-import { Text, View } from "react-native";
+import { Text, View, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
 
 export default function Index() {
   const router = useRouter();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace("/auth/login"); // Navigate to login after 2 sec
-    }, 2000);
-
-    return () => clearTimeout(timer); // Clean up if component unmounts
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const handleStart = () => {
+    router.replace("/auth/login"); // Navigate to login page
+  };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#19A7CE",
-      }}
-    >
-      <Text style={{ fontSize: 24, fontWeight: "bold", color: "#fff" }}>
-        Welcome to Lok Lagbe!
-      </Text>
-      <Text style={{ fontSize: 16, color: "#fff", marginTop: 10 }}>
-        Redirecting to login...
-      </Text>
+    <View style={styles.container}>
+      <Image
+        source={require("../assets/images/icon.png")} // Make sure icon.png is inside the assets folder
+        style={styles.icon}
+        resizeMode="contain"
+      />
+      <TouchableOpacity style={styles.button} onPress={handleStart}>
+        <Text style={styles.buttonText}>Let&apos;s Start</Text>
+      </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffffff", // White background
+  },
+  icon: {
+    width: 350,
+    height: 350,
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: "#19A7CE",
+    paddingVertical: 18,
+    paddingHorizontal: 50,
+    borderRadius: 12,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#ffffff",
+  },
+});

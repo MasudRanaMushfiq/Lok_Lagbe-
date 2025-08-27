@@ -142,11 +142,11 @@ export default function AcceptedSentNotification() {
 
       <View style={styles.btnRow}>
         <TouchableOpacity style={[styles.btn, styles.confirm]} onPress={completeWork}>
-          <Text style={styles.btnText}>Complete</Text>
+          <Text style={styles.btnText}>Completed</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={[styles.btn, styles.reject]} onPress={rejectWork}>
-          <Text style={styles.btnText}>Reject</Text>
+          <Text style={styles.btnText}>Not Completed</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

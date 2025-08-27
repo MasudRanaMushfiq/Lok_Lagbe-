@@ -29,6 +29,7 @@ type WorkData = {
   location?: string;
   status?: string;
   userId?: string;
+  acceptedBy?: string;
   createdAt?: any;
 };
 
@@ -72,6 +73,7 @@ export default function AcceptedWorksScreen() {
                   location: data.location,
                   status: data.status,
                   userId: data.userId,
+                  acceptedBy: data.acceptedBy,
                   createdAt: data.createdAt?.toDate?.() || null,
                 };
               }
@@ -79,7 +81,7 @@ export default function AcceptedWorksScreen() {
             })
           )
         ).filter(Boolean)
-         .filter(work => work?.status === 'accepted') as WorkData[]; // Only keep accepted works
+         .filter(work => work?.status === 'accepted') as WorkData[];
 
         setAcceptedWorks(works);
       } catch (error) {
@@ -92,6 +94,44 @@ export default function AcceptedWorksScreen() {
 
     fetchAcceptedWorks();
   }, [currentUser]);
+
+  // ✅ Mark work as completed and notify poster
+  const handleCompleted = async (work: WorkData) => {
+    if (!currentUser || !work.userId) return;
+
+    setLoading(true);
+    try {
+      // 1. Update work status
+      await updateDoc(doc(db, 'worked', work.id), { status: 'completed_sent' });
+
+      // 2. Notify poster (owner)
+      await addDoc(collection(db, 'notifications'), {
+        toUserId: work.userId,
+        fromUserId: currentUser.uid,
+        workId: work.id,
+        message: `Your work "${work.jobTitle}" has been completed by the worker. Please confirm.`,
+        type: 'completed_sent',
+        read: false,
+        createdAt: Timestamp.now(),
+      });
+
+      Alert.alert('Request Sent', 'Wait for confirmation from poster');
+
+      // 3. Update local state
+      setAcceptedWorks(prev =>
+        prev.map(w =>
+          w.id === work.id ? { ...w, status: 'completed_sent' } : w
+        )
+      );
+
+      router.replace('/home');
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to mark as completed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleContact = async (posterId?: string) => {
     if (!posterId) {
@@ -109,36 +149,6 @@ export default function AcceptedWorksScreen() {
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to fetch contact info');
-    }
-  };
-
-  const handleCompleted = async (work: WorkData) => {
-    if (!currentUser || !work.userId) return;
-
-    try {
-      await updateDoc(doc(db, 'worked', work.id), { status: 'completed_sent' });
-
-      await addDoc(collection(db, 'notifications'), {
-        toUserId: work.userId,
-        fromUserId: currentUser.uid,
-        workId: work.id,
-        message: `Your work "${work.jobTitle}" has been completed by the worker. Please Confirm`,
-        createdAt: Timestamp.now(),
-        read: false,
-      });
-
-      Alert.alert('Request Sent', 'Wait for Confirmation');
-
-      setAcceptedWorks((prev) =>
-        prev.map((w) =>
-          w.id === work.id ? { ...w, status: 'completed' } : w
-        )
-      );
-
-      router.replace('/home');
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Failed to mark as completed');
     }
   };
 
@@ -204,7 +214,7 @@ export default function AcceptedWorksScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.sectionTitle}>Your Pending Works</Text>
       {acceptedWorks.length === 0 ? (
-        <Text style={styles.noWorksText}>No works is pending now</Text>
+        <Text style={styles.noWorksText}>No works pending now</Text>
       ) : (
         acceptedWorks.map(renderWorkCard)
       )}
